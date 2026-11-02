@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO SMART - Pametni Sistem Za Razvrstavanje Otpada</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        tech: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#38bdf8'
+                        }
+                    },
+                    animation: {
+                        'scan-line': 'scan 2s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        scan: {
+                            '0%, 100%': { transform: 'translateY(0%)' },
+                            '50%': { transform: 'translateY(100%)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark-glass {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 10px;
+        }
+
+        /* Bin LED lights animation */
+        @keyframes ledPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        .led-active {
+            animation: ledPulse 1s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased custom-scrollbar">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-panel shadow-sm border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-recycle text-2xl"></i>
+                </div>
+                <div>
+                    <span class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-brand-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent">ECO SMART</span>
+                    <span class="block text-xs font-semibold text-slate-500 tracking-widest uppercase">Pametno razvrstavanje</span>
+                </div>
+            </div>
+
+            <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
+                <a href="#kako-funkcionise" class="hover:text-brand-600 transition">Kako funkcioniše</a>
+                <a href="#simulator" class="hover:text-brand-600 transition">Interaktivna Demo Kanta</a>
+                <a href="#tehnologije" class="hover:text-brand-600 transition">Tehnologije</a>
+                <a href="#statistika" class="hover:text-brand-600 transition">Mobilna Aplikacija</a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <a href="#simulator" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-600/20 hover:shadow-lg transition-all duration-200 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad"></i> Isprobaj Demo
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-28 bg-gradient-to-b from-brand-50/50 via-white to-slate-50">
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-200/50 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-60 -left-40 w-96 h-96 bg-teal-200/40 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100 text-brand-800 text-xs font-bold uppercase tracking-wider mb-4 border border-brand-200">
+                    <i class="fa-solid fa-leaf text-brand-600"></i> Ekološka Inovacija Budućnosti
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    KAKO FUNKCIONIŠE <span class="bg-gradient-to-r from-brand-600 to-teal-600 bg-clip-text text-transparent">ECO SMART</span>?
+                </h1>
+                <p class="mt-4 text-lg text-slate-600 font-normal">
+                    Napredni ekološki sistem koji koristi umjetnu inteligenciju i IoT senzore za automatsko prepoznavanje, razvrstavanje i reciklažu otpada.
+                </p>
+            </div>
+
+            <!-- Main Interactive Display Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start" id="kako-funkcionise">
+                
+                <!-- Left: 5 Steps Accordion/Cards -->
+                <div class="lg:col-span-6 space-y-4">
+                    <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-brand-600"></i> Koraci u procesu razvrstavanja:
+                    </h2>
+
+                    <!-- Step 1 -->
+                    <div class="step-card group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative overflow-hidden" data-step="1">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                                1
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition-colors">Ubacivanje i Detekcija</h3>
+                                <p class="text-slate-600 mt-1 leading-relaxed">
+                                    Kad ubaciš otpad u kantu, senzor i kamera prepoznaju vrstu materijala u realnom vremenu.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-xs text-blue-600 font-semibold pl-16">
+                            <i class="fa-solid fa-eye"></i> Optical Sensor Active
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="step-card group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative overflow-hidden" data-step="2">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                                2
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition-colors">AI Analiza Sadržaja</h3>
+                                <p class="text-slate-600 mt-1 leading-relaxed">
+                                    Umjetna inteligencija i kamera analiziraju oblik, materijal i boju otpada radi precizne klasifikacije.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-xs text-indigo-600 font-semibold pl-16">
+                            <i class="fa-solid fa-brain"></i> Neural Network Neural-Match
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="step-card group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative overflow-hidden" data-step="3">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-teal-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
+                                3
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition-colors">Mehaničko Usmjeravanje</h3>
+                                <p class="text-slate-600 mt-1 leading-relaxed">
+                                    Kanta otpad usmjerava u odgovarajući odjeljak pomoću preciznog mehanizma za razvrstavanje.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-xs text-teal-600 font-semibold pl-16">
+                            <i class="fa-solid fa-gear animate-spin-slow"></i> Automated Shutter Routing
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="step-card group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative overflow-hidden" data-step="4">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                                4
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition-colors">Praćenje i Pametne Obavijesti</h3>
+                                <p class="text-slate-600 mt-1 leading-relaxed">
+                                    Na ekranu i mobilnoj aplikaciji možeš vidjeti količinu recikliranog otpada, kada je kanta puna i koliko si doprinio...
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-xs text-emerald-600 font-semibold pl-16">
+                            <i class="fa-solid fa-mobile-screen"></i> Real-time App Sync
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="step-card group p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer relative overflow-hidden" data-step="5">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-brand-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+                                5
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-lg group-hover:text-brand-600 transition-colors">Reciklaža i Zaštita Prirode</h3>
+                                <p class="text-slate-600 mt-1 leading-relaxed">
+                                    Pravilno odvojen otpad se reciklira, smanjuje se zagađenje i čuva priroda za buduće generacije.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-xs text-brand-600 font-semibold pl-16">
+                            <i class="fa-solid fa-tree"></i> Positive Eco Impact
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Dynamic Smart Bin Visualization Card -->
+                <div class="lg:col-span-6 sticky top-28" id="simulator">
+                    <div class="bg-slate-900 rounded-3xl p-6 lg:p-8 text-white shadow-2xl border border-slate-800 relative overflow-hidden">
+                        <!-- Background glow -->
+                        <div class="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <!-- Top Title & Controls -->
+                        <div class="flex items-center justify-between pb-6 border-b border-slate-800">
+                            <div>
+                                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-microchip text-brand-400"></i> ECO SMART Simulator
+                                </h3>
+                                <p class="text-slate-400 text-xs">Ubacite otpad i posmatrajte AI u akciji</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sistem Aktivan
+                            </span>
+                        </div>
+
+                        <!-- Trash Drop Selector (Interactive Items) -->
+                        <div class="mt-6">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Izaberite predmet za ubacivanje:</label>
+                            <div class="grid grid-cols-4 gap-3">
+                                <button onclick="simulateTrash('plastic')" class="trash-btn flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-yellow-500 transition group">
+                                    <span class="text-2xl mb-1 group-hover:scale-125 transition-transform">🧴</span>
+                                    <span class="text-xs font-medium text-slate-300">Plastika</span>
+                                </button>
+                                <button onclick="simulateTrash('paper')" class="trash-btn flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500 transition group">
+                                    <span class="text-2xl mb-1 group-hover:scale-125 transition-transform">📄</span>
+                                    <span class="text-xs font-medium text-slate-300">Papir</span>
+                                </button>
+                                <button onclick="simulateTrash('metal')" class="trash-btn flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-blue-500 transition group">
+                                    <span class="text-2xl mb-1 group-hover:scale-125 transition-transform">🥫</span>
+                                    <span class="text-xs font-medium text-slate-300">Metal</span>
+                                </button>
+                                <button onclick="simulateTrash('organic')" class="trash-btn flex flex-col items-center justify-center p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-purple-500 transition group">
+                                    <span class="text-2xl mb-1 group-hover:scale-125 transition-transform">🍎</span>
+                                    <span class="text-xs font-medium text-slate-300">Ostalo</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Physical Smart Bin Mockup Container -->
+                        <div class="mt-8 bg-slate-950 rounded-2xl p-6 border border-slate-800 relative">
+                            
+                            <!-- Bin Camera & Screen Panel Header -->
+                            <div class="bg-slate-900 rounded-xl p-4 border border-slate-800 mb-6 relative overflow-hidden">
+                                <!-- Scanner Animation Over Screen when analyzing -->
+                                <div id="scannerOverlay" class="hidden absolute inset-0 bg-brand-500/10 pointer-events-none z-10">
+                                    <div class="w-full h-1 bg-gradient-to-r from-transparent via-brand-400 to-transparent animate-scan-line"></div>
+                                </div>
+
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                        <span class="text-[10px] text-slate-400 font-mono ml-2">CAMERA_FEED // AI_SCANNER_v2</span>
+                                    </div>
+                                    <i class="fa-solid fa-camera text-slate-500 text-sm"></i>
+                                </div>
+
+                                <!-- Screen Display Info -->
+                                <div class="bg-slate-950 rounded-lg p-3 border border-slate-800/80 text-center min-h-[90px] flex flex-col items-center justify-center">
+                                    <div id="aiStatusText" class="text-xs font-mono text-brand-400 flex items-center gap-2">
+                                        <i class="fa-solid fa-circle-notch animate-spin text-brand-500"></i> Spremno za skeniranje otpada...
+                                    </div>
+                                    <div id="aiConfidence" class="text-[11px] text-slate-400 mt-1 hidden">
+                                        Pouzdanost analize: <span class="text-emerald-400 font-bold">99.4%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Drop Zone Slot Animation Area -->
+                            <div class="h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center relative overflow-hidden mb-6 bg-slate-900/50">
+                                <div id="fallingTrash" class="text-3xl transition-all duration-700 transform translate-y-0 opacity-100">
+                                    👇 Ubacite predmet iznad
+                                </div>
+                            </div>
+
+                            <!-- Physical Bins Layout (3 Compartments) -->
+                            <div class="grid grid-cols-3 gap-3">
+                                <!-- Paper Bin (Green) -->
+                                <div id="bin-paper" class="rounded-xl bg-emerald-950/40 border-2 border-emerald-600/40 p-3 text-center transition-all duration-300">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white mx-auto flex items-center justify-center mb-2 text-sm shadow-md">
+                                        <i class="fa-solid fa-file text-xs"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-emerald-400 uppercase tracking-wide">PAPIR</span>
+                                    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                        <div id="bar-paper" class="bg-emerald-500 h-full w-[25%] transition-all duration-500"></div>
+                                    </div>
+                                    <span id="count-paper" class="text-[10px] text-slate-400 mt-1 block">25% Puno</span>
+                                </div>
+
+                                <!-- Plastic Bin (Yellow) -->
+                                <div id="bin-plastic" class="rounded-xl bg-amber-950/40 border-2 border-amber-600/40 p-3 text-center transition-all duration-300">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500 text-white mx-auto flex items-center justify-center mb-2 text-sm shadow-md">
+                                        <i class="fa-solid fa-bottle-water text-xs"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-amber-400 uppercase tracking-wide">PLASTIKA</span>
+                                    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                        <div id="bar-plastic" class="bg-amber-500 h-full w-[40%] transition-all duration-500"></div>
+                                    </div>
+                                    <span id="count-plastic" class="text-[10px] text-slate-400 mt-1 block">40% Puno</span>
+                                </div>
+
+                                <!-- Metal Bin (Blue) -->
+                                <div id="bin-metal" class="rounded-xl bg-sky-950/40 border-2 border-sky-600/40 p-3 text-center transition-all duration-300">
+                                    <div class="w-8 h-8 rounded-lg bg-sky-600 text-white mx-auto flex items-center justify-center mb-2 text-sm shadow-md">
+                                        <i class="fa-solid fa-can-food text-xs"></i>
+                                    </div>
+                                    <span class="block text-xs font-bold text-sky-400 uppercase tracking-wide">METAL</span>
+                                    <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                        <div id="bar-metal" class="bg-sky-500 h-full w-[15%] transition-all duration-500"></div>
+                                    </div>
+                                    <span id="count-metal" class="text-[10px] text-slate-400 mt-1 block">15% Puno</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Technologies Section ("Tehnologije koje koristimo:") -->
+    <section class="py-20 bg-slate-900 text-white relative overflow-hidden" id="tehnologije">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-brand-400 font-semibold text-sm uppercase tracking-wider">Inovativni Ekosistem</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold mt-2">Tehnologije koje koristimo</h2>
+                <p class="text-slate-400 mt-3">Integracija najsavremenijih tehnoloških rješenja za održivu budućnost i čišći okoliš.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                
+                <!-- Tech 1 -->
+                <div class="p-6 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-brand-500 hover:bg-slate-800 transition-all group text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-400 mx-auto flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white mb-2">Umjetna inteligencija</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Computer Vision i AI algoritmi u sekundi prepoznaju vrstu, sastav i boju materijala.
+                    </p>
+                </div>
+
+                <!-- Tech 2 -->
+                <div class="p-6 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-brand-500 hover:bg-slate-800 transition-all group text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 mx-auto flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-camera font-bold"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white mb-2">Kamera i Senzori</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Visokoprecizne HD kamere i ultrazvučni senzori za kontinuirano praćenje nivoa popunjenosti.
+                    </p>
+                </div>
+
+                <!-- Tech 3 -->
+                <div class="p-6 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-brand-500 hover:bg-slate-800 transition-all group text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mx-auto flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-wifi"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white mb-2">Internet Stvari (IoT)</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Stalna povezanost sa cloud serverom radi prenosa podataka u realnom vremenu.
+                    </p>
+                </div>
+
+                <!-- Tech 4 -->
+                <div class="p-6 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-brand-500 hover:bg-slate-800 transition-all group text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white mb-2">Mobilna Aplikacija</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Korisnički interfejs za pregled statistike reciklaže, nagradne bodove i status kante.
+                    </p>
+                </div>
+
+                <!-- Tech 5 -->
+                <div class="p-6 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-brand-500 hover:bg-slate-800 transition-all group text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-sun"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-white mb-2">Solarna Energija</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        Ugrađeni solarni paneli omogućavaju autonomni rad kante i minimalnu potrošnju struje.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile App & Live Dashboard Section -->
+    <section class="py-20 bg-white" id="statistika">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase">
+                        <i class="fa-solid fa-chart-line"></i> Pametno Praćenje Uticaja
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
+                        Mobilna Aplikacija & Ekran Kante u Realnom Vremenu
+                    </h2>
+                    <p class="text-slate-600 text-base leading-relaxed">
+                        Sa ECO SMART sistemom, u svakom trenutku imaš uvid u svoj ekološki otisak. Prati tačnu količinu razvrstanog otpada, ostvaruj ekološke bodove i pomozi u smanjenju zagađenja prirode.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 pt-4">
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-3xl font-extrabold text-brand-600 block" id="statTotalItems">128</span>
+                            <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">Recikliranih Predmeta</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="text-3xl font-extrabold text-emerald-600 block" id="statCo2Saved">14.2 kg</span>
+                            <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">Ušteda CO₂ Emisija</span>
+                        </div>
+                    </div>
+
+                    <ul class="space-y-3 pt-2 text-sm text-slate-600">
+                        <li class="flex items-center gap-3">
+                            <i class="fa-solid fa-circle-check text-brand-500"></i>
+                            Notifikacije javnim službama kada je kanta spremna za pražnjenje
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fa-solid fa-circle-check text-brand-500"></i>
+                            Sistem nagrađivanja građana za pravilno razvrstavanje
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <i class="fa-solid fa-circle-check text-brand-500"></i>
+                            Napredna analitika za pametne gradove (Smart City)
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Mockup of Mobile App UI -->
+                <div class="lg:col-span-6 flex justify-center">
+                    <div class="w-full max-w-sm bg-slate-900 rounded-[40px] p-4 shadow-2xl border-4 border-slate-800 relative">
+                        <!-- Camera Notch -->
+                        <div class="w-32 h-4 bg-slate-800 rounded-full mx-auto mb-4"></div>
+
+                        <!-- App Screen Container -->
+                        <div class="bg-slate-950 rounded-[28px] p-5 text-white space-y-5">
+                            <!-- App Top Header -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center font-bold text-xs">ES</div>
+                                    <div>
+                                        <h4 class="text-xs font-bold">Moj EcoSmart Profil</h4>
+                                        <p class="text-[10px] text-slate-400">Sarajevo Smart Bin #04</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-bell text-slate-400 text-sm"></i>
+                            </div>
+
+                            <!-- Eco Card Widget -->
+                            <div class="p-4 rounded-2xl bg-gradient-to-r from-brand-600 to-teal-600 text-white shadow-lg">
+                                <span class="text-[10px] text-emerald-100 uppercase font-bold tracking-wider">Ekološki Skor</span>
+                                <div class="text-3xl font-black mt-1">1,450 <span class="text-xs font-normal text-emerald-200">pts</span></div>
+                                <div class="mt-3 text-xs bg-black/20 p-2 rounded-lg flex items-center justify-between">
+                                    <span>Nivo: Eko Heroj 🌿</span>
+                                    <span class="font-bold">+12 danas</span>
+                                </div>
+                            </div>
+
+                            <!-- Bin Capacity Status Bars -->
+                            <div class="space-y-3">
+                                <h5 class="text-xs font-bold text-slate-300">Popunjenost Odjeljaka</h5>
+                                
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-emerald-400 font-medium">Papir & Karton</span>
+                                        <span id="app-paper-val" class="text-slate-400">25%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div id="app-paper-bar" class="bg-emerald-500 h-full w-[25%] transition-all duration-300"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-amber-400 font-medium">Plastična Ambalaža</span>
+                                        <span id="app-plastic-val" class="text-slate-400">40%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div id="app-plastic-bar" class="bg-amber-500 h-full w-[40%] transition-all duration-300"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-sky-400 font-medium">Metal & Limenke</span>
+                                        <span id="app-metal-val" class="text-slate-400">15%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div id="app-metal-bar" class="bg-sky-500 h-full w-[15%] transition-all duration-300"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="triggerConfetti()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md transition">
+                                Preuzmi Eko Nagradu 🎁
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">
+                    <i class="fa-solid fa-recycle text-sm"></i>
+                </div>
+                <span class="text-lg font-bold text-white tracking-tight">ECO SMART</span>
+            </div>
+            <p class="text-xs text-slate-500 text-center">
+                © 2026 ECO SMART Project. Sva prava zadržana. Pravilno odvojen otpad štedi resurse i čuva našu planetu.
+            </p>
+            <div class="flex gap-4 text-slate-400 text-sm">
+                <a href="#" class="hover:text-brand-400 transition"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#" class="hover:text-brand-400 transition"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" class="hover:text-brand-400 transition"><i class="fa-brands fa-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Simulation Script -->
+    <script>
+        // State management
+        const binState = {
+            paper: 25,
+            plastic: 40,
+            metal: 15,
+            totalItems: 128,
+            co2Saved: 14.2
+        };
+
+        const trashData = {
+            plastic: { icon: '🧴', name: 'Plastična Flaša', bin: 'plastic', color: 'text-amber-400' },
+            paper: { icon: '📄', name: 'Karton / Papir', bin: 'paper', color: 'text-emerald-400' },
+            metal: { icon: '🥫', name: 'Limenka', bin: 'metal', color: 'text-sky-400' },
+            organic: { icon: '🍎', name: 'Organski Otpad (Nereciklažno)', bin: 'organic', color: 'text-purple-400' }
+        };
+
+        let isProcessing = false;
+
+        function simulateTrash(type) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const item = trashData[type];
+            const fallingTrash = document.getElementById('fallingTrash');
+            const scannerOverlay = document.getElementById('scannerOverlay');
+            const aiStatusText = document.getElementById('aiStatusText');
+            const aiConfidence = document.getElementById('aiConfidence');
+
+            // 1. Drop animation start
+            fallingTrash.innerHTML = item.icon;
+            fallingTrash.className = "text-4xl transition-all duration-300 transform translate-y-0 opacity-100 scale-125";
+            
+            // 2. AI Scanning state
+            scannerOverlay.classList.remove('hidden');
+            aiStatusText.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-brand-400"></i> AI Analiza u toku: Detektovan predmet...`;
+            aiConfidence.classList.add('hidden');
+
+            setTimeout(() => {
+                // 3. AI Identification
+                if (type === 'organic') {
+                    aiStatusText.innerHTML = `<span class="text-purple-400 font-bold">Detektovano: ${item.name}</span>`;
+                } else {
+                    aiStatusText.innerHTML = `<span class="${item.color} font-bold">Prepoznato: ${item.name} ➔ Odjeljak ${item.bin.toUpperCase()}</span>`;
+                }
+                aiConfidence.classList.remove('hidden');
+
+                // Highlight bin LED
+                const targetBin = document.getElementById(`bin-${item.bin}`);
+                if (targetBin) {
+                    targetBin.classList.add('ring-4', 'ring-emerald-400', 'bg-slate-800');
+                }
+
+                // 4. Drop into bin animation
+                fallingTrash.className = "text-3xl transition-all duration-500 transform translate-y-12 opacity-0";
+
+                setTimeout(() => {
+                    // Update state & UI
+                    if (type !== 'organic') {
+                        binState[type] = Math.min(100, binState[type] + 5);
+                        binState.totalItems += 1;
+                        binState.co2Saved += 0.2;
+                        updateBinUI(type);
+                    }
+
+                    // Reset UI
+                    scannerOverlay.classList.add('hidden');
+                    if (targetBin) {
+                        targetBin.classList.remove('ring-4', 'ring-emerald-400', 'bg-slate-800');
+                    }
+                    
+                    fallingTrash.className = "text-2xl transition-all duration-300 opacity-100";
+                    fallingTrash.innerHTML = "✅ Otpad uspješno razvrstan!";
+                    
+                    setTimeout(() => {
+                        fallingTrash.innerHTML = "Ubacite novi predmet iznad 👆";
+                        aiStatusText.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin text-brand-500"></i> Spremno za skeniranje otpada...`;
+                        aiConfidence.classList.add('hidden');
+                        isProcessing = false;
+                    }, 1500);
+
+                }, 600);
+
+            }, 1000);
+        }
+
+        function updateBinUI(type) {
+            // Update Physical Bin Progress
+            const val = binState[type];
+            document.getElementById(`bar-${type}`).style.width = `${val}%`;
+            document.getElementById(`count-${type}`).innerText = `${val}% Puno`;
+
+            // Update App Display
+            document.getElementById(`app-${type}-bar`).style.width = `${val}%`;
+            document.getElementById(`app-${type}-val`).innerText = `${val}%`;
+
+            // Update stats
+            document.getElementById('statTotalItems').innerText = binState.totalItems;
+            document.getElementById('statCo2Saved').innerText = `${binState.co2Saved.toFixed(1)} kg`;
+        }
+
+        function triggerConfetti() {
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.7 }
+            });
+        }
+
+        // Highlight step cards on click
+        document.querySelectorAll('.step-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.step-card').forEach(c => c.classList.remove('border-brand-500', 'bg-brand-50/30'));
+                card.classList.add('border-brand-500', 'bg-brand-50/30');
+            });
+        });
+    </script>
+</body>
+</html>
